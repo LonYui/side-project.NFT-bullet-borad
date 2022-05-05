@@ -23,7 +23,7 @@ pub mod advertise_nft {
         let base_account = &mut ctx.accounts.base_account;
         let user = &mut ctx.accounts.user;
 
-        let item = ItemStruct{gif_link: gif_link,user_address:*user.to_account_info().key,vote:0,};
+        let item = ItemStruct{gif_link: gif_link,user_address:*user.to_account_info().key,vote_count:0,};
 
         base_account.gif_list.push(item);
         base_account.total_gifs += 1;
@@ -32,24 +32,35 @@ pub mod advertise_nft {
 
     pub fn up_vote(ctx: Context<Upvote>, gif_link:String) -> Result<()> {
         let base_account = &mut ctx.accounts.base_account;
-        // let user = &mut ctx.accounts.user;
-        // let index = base_account.gif_list.iter().position(|&x| x.gif_link==gif_link).unwrap();
-        // base_account.gif_list[index].vote +=1;
-        // 2
         for mut item in base_account.gif_list.iter_mut() {
             if item.gif_link==gif_link {
-                // item.vote += 1;
-                // std::mem::replace(&mut v[3], 42);
-                let result = item.vote+1;
-                std::mem::replace(&mut item.vote, result);
+                let result = item.vote_count+1;
+                std::mem::replace(&mut item.vote_count, result);
+                // send tip to base_account
+                // transfer_service_fee_lamports(ctx.accounts.user.to_account_info(),base_account.to_account_info(),10^9)
+                anchor_lang::solana_program::system_instruction::transfer(ctx.accounts.user.key(),item.user_address,10^9)
+                // item.user_address
             }
         }
-
-        // let mut v = vec![1, 2, 3, 4, 5, 6];
-        // let got = std::mem::replace(&mut v[3], 42);
-
         Ok(())
     }
+
+    // /// Transfers lamports from one account (must be program owned)
+    // /// to another account. The recipient can by any account
+    // fn transfer_service_fee_lamports(
+    //     from_account: &AccountInfo,
+    //     to_account: &AccountInfo,
+    //     amount_of_lamports: u64,
+    // ) -> ProgramResult {
+    //     // Does the from account have enough lamports to transfer?
+    //     if **from_account.try_borrow_lamports()? < amount_of_lamports {
+    //         return Err(CustomError::InsufficientFundsForTransaction.into());
+    //     }
+    //     // Debit from_account and credit to_account
+    //     **from_account.try_borrow_mut_lamports()? -= amount_of_lamports;
+    //     **to_account.try_borrow_mut_lamports()? += amount_of_lamports;
+    //     // Ok(())
+    // }
 }
 
 #[derive(Accounts)]
@@ -91,5 +102,5 @@ pub struct BaseAccount {
 pub struct ItemStruct {
     pub gif_link:String,
     pub user_address:Pubkey,
-    pub vote:u8,
+    pub vote_count:u8,
 }
